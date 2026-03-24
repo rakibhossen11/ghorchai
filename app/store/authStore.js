@@ -12,7 +12,7 @@ export const useAuthStore = create(
       isLoading: false,
       error: null,
 
-      // Login action
+      // Login Action
       login: async (email, password, rememberMe = false) => {
         set({ isLoading: true, error: null });
         
@@ -30,7 +30,7 @@ export const useAuthStore = create(
           });
 
           const result = await response.json();
-          console.log(result);
+          console.log('from state',result);
 
           if (!response.ok) {
             throw new Error(result.message || 'Login failed');
@@ -44,7 +44,7 @@ export const useAuthStore = create(
             }
           }
 
-          // Update store state
+          // Update store
           set({
             user: result.user,
             token: result.token,
@@ -52,7 +52,7 @@ export const useAuthStore = create(
             error: null
           });
 
-          return { success: true, data: result };
+          return { success: true, user: result.user };
           
         } catch (error) {
           set({
@@ -63,7 +63,7 @@ export const useAuthStore = create(
         }
       },
 
-      // Signup action
+      // Signup Action
       signup: async (name, email, password) => {
         set({ isLoading: true, error: null });
         
@@ -91,7 +91,7 @@ export const useAuthStore = create(
             localStorage.setItem('token', result.token);
           }
 
-          // Update store state
+          // Update store
           set({
             user: result.user,
             token: result.token,
@@ -99,7 +99,7 @@ export const useAuthStore = create(
             error: null
           });
 
-          return { success: true, data: result };
+          return { success: true, user: result.user };
           
         } catch (error) {
           set({
@@ -110,7 +110,7 @@ export const useAuthStore = create(
         }
       },
 
-      // Logout action
+      // Logout Action
       logout: async () => {
         set({ isLoading: true });
         
@@ -123,10 +123,7 @@ export const useAuthStore = create(
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                refreshToken: localStorage.getItem('refreshToken')
-              })
+              }
             });
           }
         } catch (error) {
@@ -135,10 +132,9 @@ export const useAuthStore = create(
           // Clear all storage
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          localStorage.removeItem('refreshToken');
           localStorage.removeItem('rememberMe');
           
-          // Reset store state
+          // Reset store
           set({
             user: null,
             token: null,
@@ -148,7 +144,7 @@ export const useAuthStore = create(
         }
       },
 
-      // Check authentication status
+      // Check Auth on App Load
       checkAuth: async () => {
         const token = localStorage.getItem('token');
         
@@ -179,7 +175,7 @@ export const useAuthStore = create(
             });
             return true;
           } else {
-            // Token invalid, clear it
+            // Token invalid
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             set({
@@ -204,33 +200,18 @@ export const useAuthStore = create(
         }
       },
 
-      // Update user data
-      updateUser: (userData) => {
-        const currentUser = get().user;
-        const updatedUser = { ...currentUser, ...userData };
-        
-        set({ user: updatedUser });
-        
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-      },
-
-      // Clear error
-      clearError: () => set({ error: null }),
-
-      // Getters
+      // Helper methods
       isAuthenticated: () => !!get().token,
       getUser: () => get().user,
-      getToken: () => get().token,
-      getError: () => get().error,
-      isLoading: () => get().isLoading,
+      clearError: () => set({ error: null }),
+      
     }),
     {
-      name: 'auth-storage', // name of the item in localStorage
+      name: 'auth-storage', // localStorage key
       partialize: (state) => ({ 
         user: state.user, 
         token: state.token 
-      }), // only persist user and token
+      }),
     }
   )
 );

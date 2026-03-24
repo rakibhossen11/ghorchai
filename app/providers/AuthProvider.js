@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 
 export default function AuthProvider({ children }) {
   const { checkAuth, isLoading } = useAuthStore();
+  console.log(checkAuth);
 
   useEffect(() => {
     // Check authentication status when app loads
