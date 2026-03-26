@@ -7,6 +7,7 @@ import Hero from "./components/Hero";
 import AdCard from "./components/AdCard";
 import CTA from "./components/CTA";
 import { useAuthStore } from "./store/authStore";
+import { useAdStore } from "./store/adStore";
 import {
   FaFilter,
   FaSortAmountDown,
@@ -20,294 +21,42 @@ import {
   FaArrowRight,
   FaMapMarkerAlt,
   FaSearch,
-  FaFire
+  FaFire,
+  FaSpinner
 } from "react-icons/fa";
 import { MdApartment, MdHouse } from "react-icons/md";
 import { GiVillage, GiModernCity } from "react-icons/gi";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 
-// Mock data with more variety
-const mockAds = [
-  {
-    id: 1,
-    title: "Luxury 3BR Apartment in Dhanmondi",
-    price: "৳85,000",
-    location: "Dhanmondi, Dhaka",
-    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500",
-    featured: true,
-    type: "Apartment",
-    beds: 3,
-    baths: 3,
-    area: "1800 sqft",
-    description: "Beautiful apartment with modern amenities in the heart of Dhanmondi. Features include gym, pool, and 24/7 security.",
-    contactNumber: "01712345678",
-    views: 234,
-    postedDate: "2 days ago",
-    seller: {
-      name: "Rahman Properties",
-      avatar: "",
-      verified: true,
-      rating: 4.8
-    }
-  },
-  {
-    id: 2,
-    title: "Modern Duplex House in Gulshan",
-    price: "৳1,50,000",
-    location: "Gulshan, Dhaka",
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500",
-    featured: true,
-    type: "House",
-    beds: 4,
-    baths: 4,
-    area: "3200 sqft",
-    description: "Spacious duplex house with garden and parking in Gulshan. Perfect for large families.",
-    contactNumber: "01712345679",
-    views: 567,
-    postedDate: "5 days ago",
-    seller: {
-      name: "Luxury Living BD",
-      avatar: "",
-      verified: true,
-      rating: 4.9
-    }
-  },
-  {
-    id: 3,
-    title: "Commercial Space in Banani",
-    price: "৳2,00,000",
-    location: "Banani, Dhaka",
-    image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=500",
-    featured: false,
-    type: "Commercial",
-    beds: 0,
-    baths: 2,
-    area: "2500 sqft",
-    description: "Prime commercial space perfect for office or showroom. High foot traffic area.",
-    contactNumber: "01712345680",
-    views: 123,
-    postedDate: "1 week ago",
-    seller: {
-      name: "Business Spaces Ltd",
-      avatar: "",
-      verified: true,
-      rating: 4.5
-    }
-  },
-  {
-    id: 4,
-    title: "Affordable 2BR Flat in Uttara",
-    price: "৳35,000",
-    location: "Uttara, Dhaka",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500",
-    featured: false,
-    type: "Apartment",
-    beds: 2,
-    baths: 2,
-    area: "1200 sqft",
-    description: "Cozy apartment in a peaceful neighborhood of Uttara. Close to schools and markets.",
-    contactNumber: "01712345681",
-    views: 89,
-    postedDate: "1 day ago",
-    seller: {
-      name: "City Rentals",
-      avatar: "",
-      verified: false,
-      rating: 4.2
-    }
-  },
-  {
-    id: 5,
-    title: "Penthouse with Rooftop Garden",
-    price: "৳2,50,000",
-    location: "Baridhara, Dhaka",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500",
-    featured: true,
-    type: "Penthouse",
-    beds: 5,
-    baths: 5,
-    area: "4000 sqft",
-    description: "Luxurious penthouse with panoramic city views and rooftop garden. Private elevator access.",
-    contactNumber: "01712345682",
-    views: 892,
-    postedDate: "3 days ago",
-    seller: {
-      name: "Premium Properties",
-      avatar: "",
-      verified: true,
-      rating: 5.0
-    }
-  },
-  {
-    id: 6,
-    title: "Studio Apartment in Chittagong",
-    price: "৳25,000",
-    location: "Agrabad, Chittagong",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500",
-    featured: false,
-    type: "Studio",
-    beds: 1,
-    baths: 1,
-    area: "550 sqft",
-    description: "Modern studio apartment perfect for singles or couples. Fully furnished available.",
-    contactNumber: "01712345683",
-    views: 145,
-    postedDate: "4 days ago",
-    seller: {
-      name: "Cozy Living",
-      avatar: "",
-      verified: false,
-      rating: 4.0
-    }
-  },
-  {
-    id: 7,
-    title: "Independent House in Sylhet",
-    price: "৳45,000",
-    location: "Zindabazar, Sylhet",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500",
-    featured: false,
-    type: "House",
-    beds: 3,
-    baths: 2,
-    area: "2000 sqft",
-    description: "Beautiful house with traditional architecture in Sylhet. Large courtyard and garden.",
-    contactNumber: "01712345684",
-    views: 234,
-    postedDate: "6 days ago",
-    seller: {
-      name: "Sylhet Properties",
-      avatar: "",
-      verified: true,
-      rating: 4.6
-    }
-  },
-  {
-    id: 8,
-    title: "Luxury Villa in Gazipur",
-    price: "৳95,000",
-    location: "Gazipur",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500",
-    featured: true,
-    type: "Villa",
-    beds: 4,
-    baths: 3,
-    area: "3500 sqft",
-    description: "Exclusive villa with swimming pool and large garden. Perfect for weekend getaways.",
-    contactNumber: "01712345685",
-    views: 456,
-    postedDate: "1 week ago",
-    seller: {
-      name: "Villa Specialists",
-      avatar: "",
-      verified: true,
-      rating: 4.7
-    }
-  },
-  {
-    id: 9,
-    title: "Flat in Bashundhara",
-    price: "৳65,000",
-    location: "Bashundhara, Dhaka",
-    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=500",
-    featured: false,
-    type: "Apartment",
-    beds: 3,
-    baths: 2,
-    area: "1500 sqft",
-    description: "Modern flat in Bashundhara residential area. Close to international schools.",
-    contactNumber: "01712345686",
-    views: 167,
-    postedDate: "2 days ago",
-    seller: {
-      name: "Dhaka Realty",
-      avatar: "",
-      verified: false,
-      rating: 4.1
-    }
-  },
-  {
-    id: 10,
-    title: "Land in Savar",
-    price: "৳1,20,000",
-    location: "Savar, Dhaka",
-    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500",
-    featured: false,
-    type: "Land",
-    beds: 0,
-    baths: 0,
-    area: "5 katha",
-    description: "Prime land for development in growing area. Good investment opportunity.",
-    contactNumber: "01712345687",
-    views: 78,
-    postedDate: "3 days ago",
-    seller: {
-      name: "Land Developers",
-      avatar: "",
-      verified: true,
-      rating: 4.3
-    }
-  },
-  {
-    id: 11,
-    title: "Duplex in Chittagong",
-    price: "৳80,000",
-    location: "Chittagong",
-    image: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=500",
-    featured: false,
-    type: "House",
-    beds: 4,
-    baths: 3,
-    area: "2800 sqft",
-    description: "Spacious duplex with modern amenities in Chittagong. Sea view available.",
-    contactNumber: "01712345688",
-    views: 345,
-    postedDate: "5 days ago",
-    seller: {
-      name: "Chittagong Realty",
-      avatar: "",
-      verified: true,
-      rating: 4.4
-    }
-  },
-  {
-    id: 12,
-    title: "Flat in Sylhet",
-    price: "৳40,000",
-    location: "Sylhet",
-    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500",
-    featured: false,
-    type: "Apartment",
-    beds: 3,
-    baths: 2,
-    area: "1400 sqft",
-    description: "Comfortable flat in a quiet area of Sylhet. Tea garden views.",
-    contactNumber: "01712345689",
-    views: 98,
-    postedDate: "2 days ago",
-    seller: {
-      name: "Sylhet Homes",
-      avatar: "",
-      verified: false,
-      rating: 4.0
-    }
-  }
-];
-
-// Category icons mapping
+// Category icons mapping for property types
 const categoryIcons = {
-  'Apartment': <MdApartment className="text-orange-500" />,
-  'House': <MdHouse className="text-orange-500" />,
-  'Commercial': <FaStore className="text-orange-500" />,
-  'Studio': <FaBuilding className="text-orange-500" />,
-  'Penthouse': <GiModernCity className="text-orange-500" />,
-  'Villa': <GiVillage className="text-orange-500" />,
-  'Land': <FaTree className="text-orange-500" />,
+  'apartment': <MdApartment className="text-orange-500" />,
+  'house': <MdHouse className="text-orange-500" />,
+  'commercial': <FaStore className="text-orange-500" />,
+  'studio': <FaBuilding className="text-orange-500" />,
+  'penthouse': <GiModernCity className="text-orange-500" />,
+  'villa': <GiVillage className="text-orange-500" />,
+  'land': <FaTree className="text-orange-500" />,
+};
+
+// Format category name for display
+const formatCategoryName = (type) => {
+  if (!type) return '';
+  return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
 export default function Home() {
+  const { user } = useAuthStore();
+  const { 
+    properties, 
+    getProperties, 
+    loading: adLoading, 
+    pagination 
+  } = useAdStore();
+  
   const [selectedLocation, setSelectedLocation] = useState('All');
-  const [filteredAds, setFilteredAds] = useState(mockAds);
+  const [filteredAds, setFilteredAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('latest');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
@@ -318,104 +67,106 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState('All');
   const itemsPerPage = 8;
 
-  const { user } = useAuthStore();
-
-  // Simulate loading
+  // Load properties from backend on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    loadProperties();
   }, []);
 
-  // Get unique cities
+  const loadProperties = async () => {
+    try {
+      setLoading(true);
+      console.log('📥 Loading properties from API...');
+      await getProperties({ limit: 100 }); // Load up to 100 properties
+      console.log('✅ Properties loaded:', properties?.length || 0);
+    } catch (error) {
+      console.error('Error loading properties:', error);
+      toast.error('Failed to load properties');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get unique cities from real data
   const cities = useMemo(() => {
-    const allCities = mockAds.map(ad => {
-      const parts = ad.location.split(',');
-      return parts[parts.length - 1].trim();
+    if (!properties || properties.length === 0) return ['All'];
+    const allCities = properties.map(ad => {
+      const parts = ad.location?.split(',') || [];
+      return parts[parts.length - 1]?.trim() || 'Unknown';
     });
     return ['All', ...new Set(allCities)];
-  }, []);
+  }, [properties]);
 
-  // Get unique property types
+  // Get unique property types from real data
   const propertyTypes = useMemo(() => {
-    return ['All', ...new Set(mockAds.map(ad => ad.type))];
-  }, []);
+    if (!properties || properties.length === 0) return ['All'];
+    return ['All', ...new Set(properties.map(ad => ad.property_type))];
+  }, [properties]);
 
   // Filter and sort ads
   useEffect(() => {
-    let filtered = [...mockAds];
+    if (!properties || properties.length === 0) {
+      setFilteredAds([]);
+      return;
+    }
+
+    let filtered = [...properties];
 
     // Filter by city
     if (selectedCity !== 'All') {
       filtered = filtered.filter(ad =>
-        ad.location.toLowerCase().includes(selectedCity.toLowerCase())
+        ad.location?.toLowerCase().includes(selectedCity.toLowerCase())
       );
     }
 
     // Filter by location (backward compatibility)
     if (selectedLocation !== 'All') {
       filtered = filtered.filter(ad =>
-        ad.location.toLowerCase().includes(selectedLocation.toLowerCase())
+        ad.location?.toLowerCase().includes(selectedLocation.toLowerCase())
       );
     }
 
     // Filter by property type
     if (propertyType !== 'All') {
-      filtered = filtered.filter(ad => ad.type === propertyType);
+      filtered = filtered.filter(ad => ad.property_type === propertyType);
     }
 
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(ad =>
-        ad.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ad.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ad.location.toLowerCase().includes(searchTerm.toLowerCase())
+        ad.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ad.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ad.location?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by price range
     if (priceRange.min) {
-      const minPrice = parseInt(priceRange.min.replace(/[^0-9]/g, ''));
-      filtered = filtered.filter(ad => {
-        const adPrice = parseInt(ad.price.replace(/[^0-9]/g, ''));
-        return adPrice >= minPrice;
-      });
+      const minPrice = parseFloat(priceRange.min);
+      filtered = filtered.filter(ad => ad.price >= minPrice);
     }
     if (priceRange.max) {
-      const maxPrice = parseInt(priceRange.max.replace(/[^0-9]/g, ''));
-      filtered = filtered.filter(ad => {
-        const adPrice = parseInt(ad.price.replace(/[^0-9]/g, ''));
-        return adPrice <= maxPrice;
-      });
+      const maxPrice = parseFloat(priceRange.max);
+      filtered = filtered.filter(ad => ad.price <= maxPrice);
     }
 
     // Sort
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => {
-          const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
-          const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
-          return priceA - priceB;
-        });
+        filtered.sort((a, b) => a.price - b.price);
         break;
       case 'price-high':
-        filtered.sort((a, b) => {
-          const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
-          const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
-          return priceB - priceA;
-        });
+        filtered.sort((a, b) => b.price - a.price);
         break;
       case 'popular':
-        filtered.sort((a, b) => b.views - a.views);
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
         break;
       default:
-        filtered.sort((a, b) => b.id - a.id);
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
     setFilteredAds(filtered);
     setCurrentPage(1);
-  }, [selectedLocation, selectedCity, propertyType, priceRange, sortBy, searchTerm]);
+  }, [selectedLocation, selectedCity, propertyType, priceRange, sortBy, searchTerm, properties]);
 
   // Get current page items
   const currentItems = useMemo(() => {
@@ -427,26 +178,59 @@ export default function Home() {
   // Total pages
   const totalPages = Math.ceil(filteredAds.length / itemsPerPage);
 
-  // Featured ads
+  // Featured ads (top 4 by views or featured flag)
   const featuredAds = useMemo(() => {
-    return mockAds.filter(ad => ad.featured).slice(0, 4);
-  }, []);
+    if (!properties || properties.length === 0) return [];
+    return properties
+      .filter(ad => ad.featured === true || (ad.views && ad.views > 50))
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 4);
+  }, [properties]);
 
   // Quick stats
   const stats = useMemo(() => {
+    if (!properties || properties.length === 0) {
+      return { total: 0, cities: 0, types: 0, avgPrice: '৳0' };
+    }
+    const avgPrice = properties.reduce((sum, ad) => sum + (ad.price || 0), 0) / properties.length;
     return {
-      total: mockAds.length,
+      total: properties.length,
       cities: cities.length - 1,
       types: propertyTypes.length - 1,
-      avgPrice: '৳85,000'
+      avgPrice: `৳${Math.round(avgPrice).toLocaleString()}`
     };
-  }, [cities, propertyTypes]);
+  }, [properties, cities, propertyTypes]);
 
   // Handle page change
   const handlePageChange = useCallback((pageNumber) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedLocation('All');
+    setSelectedCity('All');
+    setPropertyType('All');
+    setPriceRange({ min: '', max: '' });
+    setSortBy('latest');
+    setSearchTerm('');
+  };
+
+  // Loading state
+  if (loading && properties.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50/30 dark:from-gray-900 dark:to-gray-800">
+        <Hero />
+        <div className="container-custom py-20">
+          <div className="flex flex-col items-center justify-center">
+            <FaSpinner className="text-5xl text-orange-500 animate-spin mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">Loading properties...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50/30 dark:from-gray-900 dark:to-gray-800">
@@ -460,7 +244,7 @@ export default function Home() {
               <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 px-3 py-1.5 rounded-full">
                 <FaHome className="text-orange-500" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <span className="font-bold text-orange-600 dark:text-orange-400">{stats.total}+</span> Properties
+                  <span className="font-bold text-orange-600 dark:text-orange-400">{stats.total}</span> Properties
                 </span>
               </div>
               <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 px-3 py-1.5 rounded-full">
@@ -472,7 +256,7 @@ export default function Home() {
               <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 px-3 py-1.5 rounded-full">
                 <FaFire className="text-orange-500" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <span className="font-bold text-orange-600 dark:text-orange-400">Avg {stats.avgPrice}</span>
+                  <span className="font-bold text-orange-600 dark:text-orange-400">{stats.avgPrice}</span> Avg Price
                 </span>
               </div>
             </div>
@@ -483,10 +267,11 @@ export default function Home() {
                 <button
                   key={city}
                   onClick={() => setSelectedCity(city)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all transform hover:scale-105 ${selectedCity === city
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all transform hover:scale-105 ${
+                    selectedCity === city
                       ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
                       : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-gray-600 border border-orange-200 dark:border-gray-600'
-                    }`}
+                  }`}
                 >
                   {city}
                 </button>
@@ -531,23 +316,25 @@ export default function Home() {
               <button
                 key={type}
                 onClick={() => setPropertyType(type)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all transform hover:scale-105 ${propertyType === type
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all transform hover:scale-105 ${
+                  propertyType === type
                     ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow-md border border-orange-200 dark:border-gray-700'
-                  }`}
+                }`}
               >
                 {type !== 'All' && (
                   <span className="text-lg">
                     {categoryIcons[type] || <FaBuilding className="text-orange-500" />}
                   </span>
                 )}
-                <span>{type}</span>
+                <span>{type === 'All' ? type : formatCategoryName(type)}</span>
                 {type !== 'All' && (
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${propertyType === type
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    propertyType === type
                       ? 'bg-white/20 text-white'
                       : 'bg-orange-100 text-orange-600 dark:bg-gray-700 dark:text-orange-400'
-                    }`}>
-                    {mockAds.filter(ad => ad.type === type).length}
+                  }`}>
+                    {properties.filter(ad => ad.property_type === type).length}
                   </span>
                 )}
               </button>
@@ -600,7 +387,7 @@ export default function Home() {
 
           {/* Filters Panel */}
           <AnimatePresence>
-            {(showFilters || true) && (
+            {showFilters && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -609,7 +396,7 @@ export default function Home() {
               >
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border-2 border-orange-100 dark:border-gray-700">
                   <div className="mb-6">
-                    {/* Header with Gradient */}
+                    {/* Header */}
                     <div className="flex items-center justify-between mb-6 pb-3 border-b-2 border-orange-100 dark:border-gray-700">
                       <div className="flex items-center gap-3">
                         <div className="relative">
@@ -629,19 +416,9 @@ export default function Home() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setSelectedLocation('All');
-                          setSelectedCity('All');
-                          setPropertyType('All');
-                          setPriceRange({ min: '', max: '' });
-                          setSortBy('latest');
-                          setSearchTerm('');
-                        }}
+                        onClick={clearAllFilters}
                         className="group relative px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 rounded-xl hover:shadow-md transition-all duration-300 overflow-hidden"
                       >
-                        {/* Animated Background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
                         <div className="relative flex items-center gap-2">
                           <span className="text-sm font-medium text-orange-600 dark:text-orange-400 group-hover:text-white transition-colors duration-300">
                             Clear all filters
@@ -651,13 +428,10 @@ export default function Home() {
                             className="text-orange-500 dark:text-orange-400 group-hover:text-white group-hover:rotate-90 transition-all duration-300"
                           />
                         </div>
-
-                        {/* Ripple Effect */}
-                        <span className="absolute inset-0 rounded-xl bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                       </motion.button>
                     </div>
 
-                    {/* Optional: Active Filters Counter Badge */}
+                    {/* Active Filters Counter */}
                     {(() => {
                       const activeFilters = [
                         selectedCity !== 'All',
@@ -676,14 +450,11 @@ export default function Home() {
                               {activeFilters} active filter{activeFilters !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Refine your search for better results
-                          </span>
                         </div>
                       );
                     })()}
 
-                    {/* Optional: Quick Clear Individual Filters */}
+                    {/* Active Filters Tags */}
                     {(selectedCity !== 'All' || propertyType !== 'All' || priceRange.min || priceRange.max || searchTerm) && (
                       <div className="mb-4 flex flex-wrap gap-2">
                         {selectedCity !== 'All' && (
@@ -701,7 +472,7 @@ export default function Home() {
                         {propertyType !== 'All' && (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-gray-700 rounded-full border border-orange-200 dark:border-gray-600 text-sm">
                             <FaHome className="text-orange-500 text-xs" />
-                            <span className="text-gray-700 dark:text-gray-300">{propertyType}</span>
+                            <span className="text-gray-700 dark:text-gray-300">{formatCategoryName(propertyType)}</span>
                             <button
                               onClick={() => setPropertyType('All')}
                               className="ml-1 hover:bg-orange-200 dark:hover:bg-gray-600 rounded-full p-0.5 transition-colors"
@@ -746,18 +517,6 @@ export default function Home() {
                             </button>
                           </span>
                         )}
-                        {selectedLocation !== 'All' && selectedLocation !== 'All' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-gray-700 rounded-full border border-orange-200 dark:border-gray-600 text-sm">
-                            <FaMapMarkerAlt className="text-orange-500 text-xs" />
-                            <span className="text-gray-700 dark:text-gray-300">{selectedLocation}</span>
-                            <button
-                              onClick={() => setSelectedLocation('All')}
-                              className="ml-1 hover:bg-orange-200 dark:hover:bg-gray-600 rounded-full p-0.5 transition-colors"
-                            >
-                              <FaTimes size={10} className="text-gray-500 hover:text-orange-500" />
-                            </button>
-                          </span>
-                        )}
                       </div>
                     )}
                   </div>
@@ -790,7 +549,9 @@ export default function Home() {
                         className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border-2 border-orange-100 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       >
                         {propertyTypes.map(type => (
-                          <option key={type} value={type}>{type}</option>
+                          <option key={type} value={type}>
+                            {type === 'All' ? type : formatCategoryName(type)}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -801,7 +562,7 @@ export default function Home() {
                         Min Price (BDT)
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         placeholder="e.g., 30000"
                         value={priceRange.min}
                         onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
@@ -815,7 +576,7 @@ export default function Home() {
                         Max Price (BDT)
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         placeholder="e.g., 200000"
                         value={priceRange.max}
                         onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
@@ -823,54 +584,6 @@ export default function Home() {
                       />
                     </div>
                   </div>
-
-                  {/* Active Filters */}
-                  {(selectedCity !== 'All' || propertyType !== 'All' || priceRange.min || priceRange.max || searchTerm) && (
-                    <div className="mt-4 pt-4 border-t border-orange-100 dark:border-gray-700">
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCity !== 'All' && (
-                          <span className="inline-flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-600 dark:text-orange-400 rounded-full text-sm border border-orange-200 dark:border-orange-800">
-                            <span>City: {selectedCity}</span>
-                            <button onClick={() => setSelectedCity('All')} className="hover:text-orange-800">
-                              <FaTimes size={12} />
-                            </button>
-                          </span>
-                        )}
-                        {propertyType !== 'All' && (
-                          <span className="inline-flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-600 dark:text-orange-400 rounded-full text-sm border border-orange-200 dark:border-orange-800">
-                            <span>Type: {propertyType}</span>
-                            <button onClick={() => setPropertyType('All')} className="hover:text-orange-800">
-                              <FaTimes size={12} />
-                            </button>
-                          </span>
-                        )}
-                        {priceRange.min && (
-                          <span className="inline-flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-600 dark:text-orange-400 rounded-full text-sm border border-orange-200 dark:border-orange-800">
-                            <span>Min: ৳{priceRange.min}</span>
-                            <button onClick={() => setPriceRange({ ...priceRange, min: '' })} className="hover:text-orange-800">
-                              <FaTimes size={12} />
-                            </button>
-                          </span>
-                        )}
-                        {priceRange.max && (
-                          <span className="inline-flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-600 dark:text-orange-400 rounded-full text-sm border border-orange-200 dark:border-orange-800">
-                            <span>Max: ৳{priceRange.max}</span>
-                            <button onClick={() => setPriceRange({ ...priceRange, max: '' })} className="hover:text-orange-800">
-                              <FaTimes size={12} />
-                            </button>
-                          </span>
-                        )}
-                        {searchTerm && (
-                          <span className="inline-flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-600 dark:text-orange-400 rounded-full text-sm border border-orange-200 dark:border-orange-800">
-                            <span>Search: {searchTerm}</span>
-                            <button onClick={() => setSearchTerm('')} className="hover:text-orange-800">
-                              <FaTimes size={12} />
-                            </button>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </motion.div>
             )}
@@ -878,7 +591,7 @@ export default function Home() {
         </div>
 
         {/* Featured Properties Section */}
-        {selectedLocation === 'All' && propertyType === 'All' && !priceRange.min && !priceRange.max && !searchTerm && (
+        {selectedLocation === 'All' && propertyType === 'All' && !priceRange.min && !priceRange.max && !searchTerm && featuredAds.length > 0 && (
           <section className="mb-16">
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -895,7 +608,7 @@ export default function Home() {
                 </p>
               </div>
               <Link
-                href="/featured"
+                href="/properties"
                 className="group flex items-center space-x-2 text-orange-500 hover:text-orange-600 font-medium"
               >
                 <span>View All</span>
@@ -920,8 +633,8 @@ export default function Home() {
 
         {/* All Ads Grid */}
         <section>
-          {loading ? (
-            // Loading Skeletons with animation
+          {adLoading && properties.length === 0 ? (
+            // Loading Skeletons
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[...Array(8)].map((_, i) => (
                 <motion.div
@@ -969,40 +682,33 @@ export default function Home() {
                           Previous
                         </button>
 
-                        {[...Array(totalPages)].map((_, i) => {
-                          const pageNumber = i + 1;
+                        {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                          let pageNumber;
+                          if (totalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNumber = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNumber = totalPages - 4 + i;
+                          } else {
+                            pageNumber = currentPage - 2 + i;
+                          }
+                          
                           const isActive = currentPage === pageNumber;
 
-                          // Show first page, last page, and pages around current
-                          if (
-                            pageNumber === 1 ||
-                            pageNumber === totalPages ||
-                            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                          ) {
-                            return (
-                              <button
-                                key={pageNumber}
-                                onClick={() => handlePageChange(pageNumber)}
-                                className={`w-10 h-10 rounded-lg font-medium transition-all transform hover:scale-110 ${isActive
-                                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
-                                    : 'bg-white dark:bg-gray-800 border-2 border-orange-100 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                  }`}
-                              >
-                                {pageNumber}
-                              </button>
-                            );
-                          }
-
-                          // Show ellipsis
-                          if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
-                            return (
-                              <span key={pageNumber} className="text-orange-300">
-                                ...
-                              </span>
-                            );
-                          }
-
-                          return null;
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => handlePageChange(pageNumber)}
+                              className={`w-10 h-10 rounded-lg font-medium transition-all transform hover:scale-110 ${
+                                isActive
+                                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
+                                  : 'bg-white dark:bg-gray-800 border-2 border-orange-100 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
                         })}
 
                         <button
@@ -1029,13 +735,7 @@ export default function Home() {
                     No properties found matching your criteria
                   </p>
                   <button
-                    onClick={() => {
-                      setSelectedLocation('All');
-                      setSelectedCity('All');
-                      setPropertyType('All');
-                      setPriceRange({ min: '', max: '' });
-                      setSearchTerm('');
-                    }}
+                    onClick={clearAllFilters}
                     className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
                     Clear All Filters
