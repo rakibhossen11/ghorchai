@@ -11,6 +11,7 @@ export const useAdStore = create((set, get) => ({
     savedProperties: [],
     loading: false,
     error: null,
+    summary: null, // Added for status summary
     pagination: {
         page: 1,
         limit: 10,
@@ -90,7 +91,7 @@ export const useAdStore = create((set, get) => ({
         }
     },
 
-    // Get all properties with filters
+    // Get all properties with filters (SHOWS ALL STATUSES)
     getProperties: async (filters = {}) => {
         set({ loading: true, error: null });
         
@@ -103,12 +104,17 @@ export const useAdStore = create((set, get) => ({
             });
             
             const response = await axios.get(`${API_URL}/api/properties?${params}`);
-            console.log('ad store',response);
+            console.log('📦 Properties API response:', response.data);
+            
+            // Extract summary if available
+            const summary = response.data.data.summary || null;
             
             set({ 
                 properties: response.data.data.properties,
                 pagination: response.data.data.pagination,
-                loading: false 
+                summary: summary,
+                loading: false,
+                error: null
             });
             
             return response.data;
@@ -117,9 +123,51 @@ export const useAdStore = create((set, get) => ({
             console.error('Get properties error:', error);
             set({ 
                 loading: false, 
-                error: error.response?.data?.message || error.message 
+                error: error.response?.data?.message || error.message,
+                properties: []
             });
             throw error;
+        }
+    },
+
+    // Get properties by specific status
+    getPropertiesByStatus: async (status, page = 1, limit = 10) => {
+        set({ loading: true, error: null });
+        
+        try {
+            const response = await axios.get(`${API_URL}/api/properties/status/${status}?page=${page}&limit=${limit}`);
+            console.log(`📦 Properties with status "${status}":`, response.data);
+            
+            set({ 
+                properties: response.data.data.properties,
+                pagination: response.data.data.pagination,
+                loading: false,
+                error: null
+            });
+            
+            return response.data;
+            
+        } catch (error) {
+            console.error('Get properties by status error:', error);
+            set({ 
+                loading: false, 
+                error: error.response?.data?.message || error.message,
+                properties: []
+            });
+            throw error;
+        }
+    },
+
+    // Get status summary (counts of each status)
+    getStatusSummary: async () => {
+        try {
+            // Fetch all properties to get summary
+            const response = await axios.get(`${API_URL}/api/properties?limit=1`);
+            const summary = response.data.data.summary;
+            return summary;
+        } catch (error) {
+            console.error('Get status summary error:', error);
+            return null;
         }
     },
 
@@ -129,6 +177,7 @@ export const useAdStore = create((set, get) => ({
         
         try {
             const response = await axios.get(`${API_URL}/api/properties/${id}`);
+            console.log(`📦 Property ${id}:`, response.data);
             set({ loading: false });
             return response.data;
             
@@ -143,7 +192,7 @@ export const useAdStore = create((set, get) => ({
     },
 
     // Get user's properties (requires auth)
-    getUserProperties: async (status = null) => {
+    getUserProperties: async (status = null, page = 1, limit = 10) => {
         set({ loading: true, error: null });
         
         try {
@@ -152,9 +201,10 @@ export const useAdStore = create((set, get) => ({
                 throw new Error('Please login to view your properties');
             }
             
-            const url = status 
-                ? `${API_URL}/api/properties/user/my-properties?status=${status}`
-                : `${API_URL}/api/properties/user/my-properties`;
+            let url = `${API_URL}/api/properties/user/my-properties?page=${page}&limit=${limit}`;
+            if (status) {
+                url += `&status=${status}`;
+            }
             
             const response = await axios.get(url, {
                 headers: {
@@ -197,7 +247,13 @@ export const useAdStore = create((set, get) => ({
                 }
             });
             
-            set({ loading: false });
+            // Update local state
+            set(state => ({
+                properties: state.properties.map(p => p.id === id ? { ...p, ...data } : p),
+                userProperties: state.userProperties.map(p => p.id === id ? { ...p, ...data } : p),
+                loading: false
+            }));
+            
             return response.data;
             
         } catch (error) {
@@ -208,6 +264,11 @@ export const useAdStore = create((set, get) => ({
             });
             throw error;
         }
+    },
+
+    // Update property status (activate, deactivate, mark as sold)
+    updatePropertyStatus: async (id, status) => {
+        return await get().updateProperty(id, { status });
     },
 
     // Delete property (requires auth)
@@ -230,8 +291,11 @@ export const useAdStore = create((set, get) => ({
             set(state => ({
                 properties: state.properties.filter(p => p.id !== id),
                 userProperties: state.userProperties.filter(p => p.id !== id),
+                savedProperties: state.savedProperties.filter(p => p.id !== id),
                 loading: false
             }));
+            
+            return { success: true };
             
         } catch (error) {
             console.error('Delete property error:', error);
@@ -259,7 +323,17 @@ export const useAdStore = create((set, get) => ({
                 }
             });
             
-            set({ loading: false });
+            // Update local state to reflect save status
+            set(state => ({
+                properties: state.properties.map(p => 
+                    p.id === id ? { ...p, isSaved: response.data.data.saved } : p
+                ),
+                savedProperties: response.data.data.saved 
+                    ? [...state.savedProperties, state.properties.find(p => p.id === id)]
+                    : state.savedProperties.filter(p => p.id !== id),
+                loading: false
+            }));
+            
             return response.data;
             
         } catch (error) {
@@ -273,7 +347,7 @@ export const useAdStore = create((set, get) => ({
     },
 
     // Get saved properties (requires auth)
-    getSavedProperties: async () => {
+    getSavedProperties: async (page = 1, limit = 10) => {
         set({ loading: true, error: null });
         
         try {
@@ -282,7 +356,7 @@ export const useAdStore = create((set, get) => ({
                 throw new Error('Please login to view saved properties');
             }
             
-            const response = await axios.get(`${API_URL}/api/properties/user/saved`, {
+            const response = await axios.get(`${API_URL}/api/properties/user/saved?page=${page}&limit=${limit}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -290,6 +364,7 @@ export const useAdStore = create((set, get) => ({
             
             set({ 
                 savedProperties: response.data.data.properties,
+                pagination: response.data.data.pagination,
                 loading: false 
             });
             
@@ -305,9 +380,69 @@ export const useAdStore = create((set, get) => ({
         }
     },
 
+    // Helper: Get status badge styling
+    getStatusBadge: (status) => {
+        const badges = {
+            'active': { 
+                color: 'green', 
+                text: 'Active', 
+                bg: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                icon: '✅'
+            },
+            'pending': { 
+                color: 'yellow', 
+                text: 'Pending', 
+                bg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+                icon: '⏳'
+            },
+            'sold': { 
+                color: 'red', 
+                text: 'Sold', 
+                bg: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                icon: '🏷️'
+            },
+            'expired': { 
+                color: 'gray', 
+                text: 'Expired', 
+                bg: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
+                icon: '⌛'
+            },
+            'inactive': { 
+                color: 'gray', 
+                text: 'Inactive', 
+                bg: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
+                icon: '🔴'
+            }
+        };
+        return badges[status] || badges['pending'];
+    },
+
+    // Helper: Get status counts
+    getStatusCounts: () => {
+        const { summary } = get();
+        return summary?.statusCounts || {};
+    },
+
     // Clear error
-    clearError: () => set({ error: null })
+    clearError: () => set({ error: null }),
+    
+    // Reset store
+    reset: () => set({
+        properties: [],
+        userProperties: [],
+        savedProperties: [],
+        loading: false,
+        error: null,
+        summary: null,
+        pagination: {
+            page: 1,
+            limit: 10,
+            total: 0,
+            totalPages: 0
+        }
+    })
 }));
+
 
 // // store/adStore.js
 // import { create } from 'zustand';
